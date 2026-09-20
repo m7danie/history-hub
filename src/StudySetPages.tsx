@@ -141,14 +141,30 @@ export function StudySetPage({ set, onUpdated }: {
   const [generating, setGenerating] = useState(false);
   const [generatingTest, setGeneratingTest] = useState(false);
   const [generatingTrivia, setGeneratingTrivia] = useState(false);
+  const [generationSeconds, setGenerationSeconds] = useState(0);
   const [flashError, setFlashError] = useState('');
   const editor = useRef<HTMLTextAreaElement>(null);
   const editButton = useRef<HTMLButtonElement>(null);
+  const generationStartedAt = useRef<number | null>(null);
 
   useEffect(() => {
     if (editing) editor.current?.focus();
     else if (status) editButton.current?.focus();
   }, [editing, status]);
+
+  useEffect(() => {
+    const isGenerating = generating || generatingTest || generatingTrivia;
+    if (!isGenerating) {
+      generationStartedAt.current = null;
+      setGenerationSeconds(0);
+      return;
+    }
+    generationStartedAt.current ??= Date.now();
+    const timer = window.setInterval(() => {
+      setGenerationSeconds(Math.floor((Date.now() - (generationStartedAt.current ?? Date.now())) / 1000));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [generating, generatingTest, generatingTrivia]);
 
   function saveNotes(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -342,9 +358,12 @@ export function StudySetPage({ set, onUpdated }: {
         </div>
         {flashError && <p className="form-error" id="flash-error" role="alert" style={{ marginTop: '16px' }}>{flashError}</p>}
         {(generating || generatingTest || generatingTrivia) && (
-          <div className="flashcard-generating">
+          <div className="flashcard-generating" aria-live="polite">
             <div className="spinner" />
-            <p className="subtitle">{generating ? 'Creating flash cards' : generatingTest ? 'Creating practice test' : 'Creating trivia'} from your notes… This may take a moment.</p>
+            <p className="subtitle">
+              {generating ? 'Creating flash cards' : generatingTest ? 'Creating practice test' : 'Creating trivia'} from your notes… {generationSeconds}s elapsed.
+              {generatingTrivia ? ' The local AI may take a few minutes, especially the first time.' : ' This may take a moment.'}
+            </p>
           </div>
         )}
         <section className="study-panel" aria-labelledby="notes-title">
