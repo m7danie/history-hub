@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Zap, Trophy, Flame, Clock, ArrowRight, RotateCcw } from 'lucide-react';
 import type { TriviaQuestion } from './studySets';
 
+const QUESTION_TIME_LIMIT = 60;
+
 interface TriviaGameProps {
   questions: TriviaQuestion[];
   onClose: () => void;
@@ -23,7 +25,7 @@ export function TriviaGame({ questions, onClose }: TriviaGameProps) {
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(15);
+  const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_LIMIT);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -83,7 +85,7 @@ export function TriviaGame({ questions, onClose }: TriviaGameProps) {
       setCurrentIndex(i => i + 1);
       setSelectedAnswer(null);
       setShowResult(false);
-      setTimeLeft(15);
+      setTimeLeft(QUESTION_TIME_LIMIT);
     }
   }
 
@@ -98,7 +100,7 @@ export function TriviaGame({ questions, onClose }: TriviaGameProps) {
     setSelectedAnswer(null);
     setShowResult(false);
     setGameOver(false);
-    setTimeLeft(15);
+    setTimeLeft(QUESTION_TIME_LIMIT);
   }
 
   if (triviaQuestions.length < 3) {
@@ -176,10 +178,10 @@ export function TriviaGame({ questions, onClose }: TriviaGameProps) {
         </div>
       </div>
 
-      <div className={`trivia-timer ${timeLeft <= 5 ? 'low' : ''}`}>
+      <div className={`trivia-timer ${timeLeft <= 10 ? 'low' : ''}`}>
         <Clock size={18} />
         <div className="timer-bar">
-          <div className="timer-fill" style={{ width: `${(timeLeft / 15) * 100}%` }} />
+          <div className="timer-fill" style={{ width: `${(timeLeft / QUESTION_TIME_LIMIT) * 100}%` }} />
         </div>
         <span>{timeLeft}s</span>
       </div>
