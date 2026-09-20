@@ -1,0 +1,29 @@
+# JavaScript dependencies and generated output
+node_modules/
+dist/
+*.log
+
+# Local runtimes / Python environments
+.runtime/
+.venv/
+venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local databases / app data if ever created inside the repo
+*.sqlite
+*.sqlite3
+*.db
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Editors / OS metadata
+.DS_Store
+.vscode/
+.idea/
