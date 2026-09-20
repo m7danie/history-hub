@@ -237,7 +237,11 @@ export function StudySetPage({ set, onUpdated }: {
     setGeneratingTrivia(true);
     setFlashError('');
     try {
-      const session = await fetch('/api/session').then(r => r.json());
+      const sessionResponse = await fetch('/api/session');
+      const session = await sessionResponse.json();
+      if (!sessionResponse.ok || typeof session.token !== 'string') {
+        throw new Error('The local server connection expired. Reload the page and try again.');
+      }
       const response = await fetch('/api/trivia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-History-Token': session.token },

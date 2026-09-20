@@ -8,6 +8,7 @@ import threading
 import traceback
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlparse
 
 # Import with error handling
 try:
@@ -50,8 +51,8 @@ def check_dependencies():
 
 TOKEN = secrets.token_urlsafe(32)
 GATE = threading.Lock()
-ALLOWED_HOSTS = {"127.0.0.1:8766", "localhost:8766", "127.0.0.1:5173", "localhost:5173", "127.0.0.1:4173", "localhost:4173"}
-ALLOWED_ORIGINS = {"http://" + host for host in ALLOWED_HOSTS}
+ALLOWED_HOSTS = {"127.0.0.1:8766", "localhost:8766"}
+ALLOWED_ORIGIN_HOSTS = {"127.0.0.1", "localhost"}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -69,7 +70,12 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(raw)
 
     def trusted(self):
-        return self.headers.get("Host") in ALLOWED_HOSTS and self.headers.get("Origin", "http://127.0.0.1:8766") in ALLOWED_ORIGINS
+        origin = urlparse(self.headers.get("Origin", "http://127.0.0.1:8766"))
+        return (
+            self.headers.get("Host") in ALLOWED_HOSTS
+            and origin.scheme == "http"
+            and origin.hostname in ALLOWED_ORIGIN_HOSTS
+        )
 
     def do_GET(self):
         if not self.trusted():
