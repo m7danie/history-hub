@@ -217,4 +217,10 @@ if __name__ == "__main__":
         print("\nFix these issues and try again.")
         sys.exit(1)
     print(f"\nServer ready: http://127.0.0.1:8766", flush=True)
-    ThreadingHTTPServer(("127.0.0.1", 8766), Handler).serve_forever()
+    server = ThreadingHTTPServer(("127.0.0.1", 8766), Handler)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nServer stopped.", flush=True)
+    finally:
+        server.server_close()
