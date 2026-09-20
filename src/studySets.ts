@@ -15,6 +15,14 @@ export interface PracticeQuestion {
   explanation: string;
 }
 
+export interface TriviaQuestion {
+  id: string;
+  question: string;
+  options: [string, string, string, string];
+  correctAnswer: string;
+  explanation: string;
+}
+
 export interface StudySet {
   id: string;
   name: string;
@@ -22,6 +30,7 @@ export interface StudySet {
   createdAt: string;
   flashCards?: FlashCard[];
   practiceQuestions?: PracticeQuestion[];
+  triviaQuestions?: TriviaQuestion[];
 }
 
 const PREFIX = 'history-hub.study-set.v1.';
@@ -87,6 +96,12 @@ export function updateStudySetPracticeQuestions(id: string, practiceQuestions: P
   const existing = loadStudySets().find(set => set.id === id);
   if (!existing) throw new Error('Study set not found. Practice questions have not been saved.');
   return saveStudySet({ ...existing, practiceQuestions });
+}
+
+export function updateStudySetTriviaQuestions(id: string, triviaQuestions: TriviaQuestion[]): StudySet {
+  const existing = loadStudySets().find(set => set.id === id);
+  if (!existing) throw new Error('Study set not found. Trivia questions have not been saved.');
+  return saveStudySet({ ...existing, triviaQuestions });
 }
 
 export function deleteStudySetLocal(id: string): void {

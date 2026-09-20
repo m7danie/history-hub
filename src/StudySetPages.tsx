@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, Plus, Sparkles, BookOpen, FileText, Gamepad2 } from 'lucide-react';
-import { createStudySet, updateStudySetNotes, updateStudySetFlashCards, updateStudySetPracticeQuestions, type StudySet, type FlashCard, type PracticeQuestion } from './studySets';
+import { createStudySet, updateStudySetNotes, updateStudySetFlashCards, updateStudySetPracticeQuestions, updateStudySetTriviaQuestions, type StudySet, type FlashCard, type PracticeQuestion, type TriviaQuestion } from './studySets';
 import { FlashCards } from './FlashCards';
 import { PracticeTest } from './PracticeTest';
 import { TriviaGame } from './TriviaGame';
@@ -140,6 +140,7 @@ export function StudySetPage({ set, onUpdated }: {
   const [playingTrivia, setPlayingTrivia] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatingTest, setGeneratingTest] = useState(false);
+  const [generatingTrivia, setGeneratingTrivia] = useState(false);
   const [flashError, setFlashError] = useState('');
   const editor = useRef<HTMLTextAreaElement>(null);
   const editButton = useRef<HTMLButtonElement>(null);
@@ -227,6 +228,39 @@ export function StudySetPage({ set, onUpdated }: {
     }
   }
 
+  async function generateTrivia() {
+    if (!set || generatingTrivia) return;
+    if (!set.notes.trim()) {
+      setFlashError('Add some notes first before generating trivia.');
+      return;
+    }
+    setGeneratingTrivia(true);
+    setFlashError('');
+    try {
+      const session = await fetch('/api/session').then(r => r.json());
+      const response = await fetch('/api/trivia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-History-Token': session.token },
+        body: JSON.stringify({ notes: set.notes }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to generate trivia.');
+      const questions: TriviaQuestion[] = data.questions.map((q: { question: string; options: [string, string, string, string]; correctAnswer: string; explanation: string }) => ({
+        id: crypto.randomUUID(),
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+      }));
+      onUpdated(updateStudySetTriviaQuestions(set.id, questions));
+      setPlayingTrivia(true);
+    } catch (cause) {
+      setFlashError(cause instanceof Error ? cause.message : 'Unable to generate trivia. Please try again.');
+    } finally {
+      setGeneratingTrivia(false);
+    }
+  }
+
   if (studying && set?.flashCards?.length) {
     return (
       <div className="study-page">
@@ -243,10 +277,10 @@ export function StudySetPage({ set, onUpdated }: {
     );
   }
 
-  if (playingTrivia && set?.practiceQuestions?.length) {
+  if (playingTrivia && set?.triviaQuestions?.length) {
     return (
       <div className="study-page">
-        <TriviaGame questions={set.practiceQuestions} onClose={() => setPlayingTrivia(false)} />
+        <TriviaGame questions={set.triviaQuestions} onClose={() => setPlayingTrivia(false)} />
       </div>
     );
   }
@@ -267,7 +301,7 @@ export function StudySetPage({ set, onUpdated }: {
           <button
             className="create-button"
             onClick={generateFlashCards}
-            disabled={generating || generatingTest}
+            disabled={generating || generatingTest || generatingTrivia}
             aria-describedby={flashError ? 'flash-error' : undefined}
           >
             <Sparkles size={18} aria-hidden="true" />
@@ -280,25 +314,33 @@ export function StudySetPage({ set, onUpdated }: {
               <button className="create-button primary-button" onClick={() => setTakingTest(true)}>
                 <FileText size={18} aria-hidden="true" /> Take Practice Test ({set.practiceQuestions.length} questions)
               </button>
-              <button className="create-button" onClick={() => setPlayingTrivia(true)} style={{ background: '#9e7638', color: 'white', borderColor: '#9e7638' }}>
-                <Gamepad2 size={18} aria-hidden="true" /> Play Trivia
-              </button>
             </>
           ) : null}
           <button
             className="create-button"
             onClick={generatePracticeTest}
-            disabled={generating || generatingTest}
+            disabled={generating || generatingTest || generatingTrivia}
           >
             <FileText size={18} aria-hidden="true" />
             {generatingTest ? 'Generating…' : set.practiceQuestions?.length ? 'Regenerate Practice Test' : 'Generate Practice Test'}
           </button>
         </div>
+        <div className="materials-action">
+          {set.triviaQuestions?.length ? (
+            <button className="create-button primary-button" onClick={() => setPlayingTrivia(true)}>
+              <Gamepad2 size={18} aria-hidden="true" /> Play Trivia ({set.triviaQuestions.length} questions)
+            </button>
+          ) : null}
+          <button className="create-button" onClick={generateTrivia} disabled={generating || generatingTest || generatingTrivia}>
+            <Gamepad2 size={18} aria-hidden="true" />
+            {generatingTrivia ? 'Generating…' : set.triviaQuestions?.length ? 'Regenerate Trivia' : 'Generate Trivia'}
+          </button>
+        </div>
         {flashError && <p className="form-error" id="flash-error" role="alert" style={{ marginTop: '16px' }}>{flashError}</p>}
-        {(generating || generatingTest) && (
+        {(generating || generatingTest || generatingTrivia) && (
           <div className="flashcard-generating">
             <div className="spinner" />
-            <p className="subtitle">{generating ? 'Creating flash cards' : 'Creating practice test'} from your notes… This may take a moment.</p>
+            <p className="subtitle">{generating ? 'Creating flash cards' : generatingTest ? 'Creating practice test' : 'Creating trivia'} from your notes… This may take a moment.</p>
           </div>
         )}
         <section className="study-panel" aria-labelledby="notes-title">

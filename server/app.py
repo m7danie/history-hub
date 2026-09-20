@@ -11,7 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 # Import with error handling
 try:
-    from ai_service import GenerationError, analyze_notes, generate_flashcards, generate_practice_test, extract_notes_from_file
+    from ai_service import GenerationError, analyze_notes, generate_flashcards, generate_practice_test, generate_trivia, extract_notes_from_file
     import storage
 except ImportError as e:
     print(f"Import error: {e}", file=sys.stderr)
@@ -142,7 +142,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(404, {"error": "Study set not found."})
         
         # AI operations (need gate)
-        if self.path not in ("/api/analyze", "/api/flashcards", "/api/practice-test", "/api/extract-notes"):
+        if self.path not in ("/api/analyze", "/api/flashcards", "/api/practice-test", "/api/trivia", "/api/extract-notes"):
             return self.send_json(404, {"error": "Not found."})
         if not GATE.acquire(blocking=False):
             return self.send_json(429, {"error": "Another request is running. Please wait and try again."})
@@ -185,6 +185,8 @@ class Handler(BaseHTTPRequestHandler):
                     result = generate_flashcards(data["notes"])
                 elif self.path == "/api/practice-test":
                     result = generate_practice_test(data["notes"])
+                elif self.path == "/api/trivia":
+                    result = generate_trivia(data["notes"])
                 else:
                     result = asyncio.run(analyze_notes(data["notes"]))
                 self.send_json(200, result)

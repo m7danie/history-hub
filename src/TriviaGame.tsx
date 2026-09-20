@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Zap, Trophy, Flame, Clock, ArrowRight, RotateCcw } from 'lucide-react';
-import type { PracticeQuestion } from './studySets';
+import type { TriviaQuestion } from './studySets';
 
 interface TriviaGameProps {
-  questions: PracticeQuestion[];
+  questions: TriviaQuestion[];
   onClose: () => void;
 }
 
@@ -17,10 +17,8 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 export function TriviaGame({ questions, onClose }: TriviaGameProps) {
-  // Only use multiple choice and true/false for trivia
-  const triviaQuestions = questions.filter(q => q.type === 'multiple_choice' || q.type === 'true_false');
-  
-  const [gameQuestions, setGameQuestions] = useState<PracticeQuestion[]>([]);
+  const triviaQuestions = questions;
+  const [gameQuestions, setGameQuestions] = useState<TriviaQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -109,7 +107,7 @@ export function TriviaGame({ questions, onClose }: TriviaGameProps) {
         <div className="trivia-empty">
           <Trophy size={48} />
           <h2>Not enough questions!</h2>
-          <p>Generate a practice test first to play trivia. You need at least 3 multiple choice or true/false questions.</p>
+          <p>Generate trivia from this study set first. You need at least 3 questions to play.</p>
           <button className="create-button primary-button" onClick={onClose}>Go Back</button>
         </div>
       </div>
@@ -191,7 +189,7 @@ export function TriviaGame({ questions, onClose }: TriviaGameProps) {
       </div>
 
       <div className="trivia-options">
-        {currentQuestion.type === 'multiple_choice' && currentQuestion.options?.map((option, i) => (
+        {currentQuestion.options.map((option, i) => (
           <button
             key={i}
             className={`trivia-option ${selectedAnswer === option ? 'selected' : ''} ${
@@ -201,19 +199,6 @@ export function TriviaGame({ questions, onClose }: TriviaGameProps) {
             disabled={showResult}
           >
             <span className="option-key">{String.fromCharCode(65 + i)}</span>
-            {option}
-          </button>
-        ))}
-
-        {currentQuestion.type === 'true_false' && ['True', 'False'].map((option) => (
-          <button
-            key={option}
-            className={`trivia-option ${selectedAnswer === option ? 'selected' : ''} ${
-              showResult && option.toLowerCase() === currentQuestion.correctAnswer.toLowerCase() ? 'correct' : ''
-            } ${showResult && selectedAnswer === option && !isCorrect ? 'incorrect' : ''}`}
-            onClick={() => selectAnswer(option)}
-            disabled={showResult}
-          >
             {option}
           </button>
         ))}
